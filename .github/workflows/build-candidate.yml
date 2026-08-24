@@ -24,7 +24,20 @@ env:
 
 jobs:
   build:
+    name: build ${{ matrix.target }}
     runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - elecrow-adv-24-28-tft
+          - elecrow-adv-35-tft
+          - elecrow-adv1-43-50-70-tft
+          - picomputer-s3-tft
+          - rak_wismesh_tap_v2-tft
+          - seeed-sensecap-indicator-tft
+          - t-deck-tft
+          - unphone-tft
     steps:
       - name: Check out firmware
         uses: actions/checkout@v6
@@ -56,25 +69,41 @@ jobs:
 
       - name: Build targets
         working-directory: firmware
-        run: |
-          set -euo pipefail
-          for target in $TARGETS; do
-            echo "::group::Build $target"
-            pio run -e "$target"
-            echo "::endgroup::"
-          done
+        run: pio run -e "${{ matrix.target }}"
 
       - name: Collect firmware assets
+        run: |
+          set -euo pipefail
+          out="release/${{ matrix.target }}"
+          mkdir -p "$out"
+          cp "firmware/.pio/build/${{ matrix.target }}"/firmware-*.bin "$out/"
+          cp "firmware/.pio/build/${{ matrix.target }}"/littlefs-*.bin "$out/" || true
+          cp "firmware/.pio/build/${{ matrix.target }}"/*.mt.json "$out/" || true
+
+      - name: Upload target artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.target }}
+          path: release/${{ matrix.target }}/*
+          retention-days: 30
+
+  publish:
+    name: publish release
+    runs-on: ubuntu-24.04
+    needs: build
+    steps:
+      - name: Download target artifacts
+        uses: actions/download-artifact@v7
+        with:
+          path: release-input
+
+      - name: Collect release assets
         run: |
           set -euo pipefail
           build_timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           out="release/$RELEASE_TAG"
           mkdir -p "$out"
-          for target in $TARGETS; do
-            cp "firmware/.pio/build/$target"/firmware-*.bin "$out/"
-            cp "firmware/.pio/build/$target"/littlefs-*.bin "$out/" || true
-            cp "firmware/.pio/build/$target"/*.mt.json "$out/" || true
-          done
+          find release-input -type f -exec cp {} "$out/" \;
           sha256sum "$out"/* > "$out/SHA256SUMS.txt"
           {
             echo "release_tag=$RELEASE_TAG"
@@ -87,7 +116,7 @@ jobs:
             echo "build_timestamp=$build_timestamp"
           } > "$out/build-source.txt"
 
-      - name: Upload workflow artifact
+      - name: Upload release artifact
         uses: actions/upload-artifact@v7
         with:
           name: ${{ env.RELEASE_TAG }}
