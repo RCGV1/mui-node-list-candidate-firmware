@@ -1,0 +1,80 @@
+name: Build candidate firmware
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  FIRMWARE_REPO: RCGV1/firmware-Fork
+  FIRMWARE_REF: 599f1c36ec5738cae8d330b095ff9f3f868b1ea3
+  DEVICE_UI_REPO: RCGV1/device-ui
+  DEVICE_UI_REF: 9e84d74cb9bc4f2ef4cc577912b3d11b2ad29504
+  TARGET: t-deck-tft
+  RELEASE_TAG: mui-node-list-20260824-599f1c3
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out firmware
+        uses: actions/checkout@v6
+        with:
+          repository: ${{ env.FIRMWARE_REPO }}
+          ref: ${{ env.FIRMWARE_REF }}
+          path: firmware
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install PlatformIO
+        run: python -m pip install --upgrade platformio
+
+      - name: Build target
+        working-directory: firmware
+        run: pio run -e "$TARGET"
+
+      - name: Collect firmware assets
+        run: |
+          set -euo pipefail
+          out="release/$RELEASE_TAG"
+          mkdir -p "$out"
+          cp "firmware/.pio/build/$TARGET"/firmware-*.bin "$out/"
+          cp "firmware/.pio/build/$TARGET"/littlefs-*.bin "$out/" || true
+          cp "firmware/.pio/build/$TARGET"/*.mt.json "$out/" || true
+          sha256sum "$out"/* > "$out/SHA256SUMS.txt"
+          {
+            echo "release_tag=$RELEASE_TAG"
+            echo "firmware_repo=$FIRMWARE_REPO"
+            echo "firmware_ref=$FIRMWARE_REF"
+            echo "device_ui_repo=$DEVICE_UI_REPO"
+            echo "device_ui_ref=$DEVICE_UI_REF"
+            echo "target=$TARGET"
+            echo "compile_definition=DEVICE_UI_MUI_VIRTUAL_NODE_LIST"
+          } > "$out/build-source.txt"
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          notes="$(mktemp)"
+          {
+            echo "MUI virtual node-list tester firmware"
+            echo
+            echo "Tester-only artifact; not a Meshtastic stable release."
+            echo
+            echo "- Firmware: $FIRMWARE_REPO@$FIRMWARE_REF"
+            echo "- Device UI: $DEVICE_UI_REPO@$DEVICE_UI_REF"
+            echo "- Target: $TARGET"
+            echo "- Required compile definition: DEVICE_UI_MUI_VIRTUAL_NODE_LIST"
+          } > "$notes"
+          gh release delete "$RELEASE_TAG" --yes --cleanup-tag || true
+          gh release create "$RELEASE_TAG" \
+            --title "MUI virtual node-list tester firmware ($TARGET)" \
+            --notes-file "$notes" \
+            "release/$RELEASE_TAG"/*
