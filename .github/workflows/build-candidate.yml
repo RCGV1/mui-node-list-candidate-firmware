@@ -8,11 +8,19 @@ permissions:
 
 env:
   FIRMWARE_REPO: RCGV1/firmware-Fork
-  FIRMWARE_REF: 599f1c36ec5738cae8d330b095ff9f3f868b1ea3
+  FIRMWARE_REF: 631688ede2fd1a88fda9ff5cb82b033e7ca93d89
   DEVICE_UI_REPO: RCGV1/device-ui
   DEVICE_UI_REF: 9e84d74cb9bc4f2ef4cc577912b3d11b2ad29504
-  TARGET: t-deck-tft
-  RELEASE_TAG: mui-node-list-20260824-599f1c3
+  RELEASE_TAG: mui-node-list-20260824-631688e
+  TARGETS: >-
+    elecrow-adv-24-28-tft
+    elecrow-adv-35-tft
+    elecrow-adv1-43-50-70-tft
+    picomputer-s3-tft
+    rak_wismesh_tap_v2-tft
+    seeed-sensecap-indicator-tft
+    t-deck-tft
+    unphone-tft
 
 jobs:
   build:
@@ -39,11 +47,22 @@ jobs:
         run: |
           set -euo pipefail
           grep -F "9e84d74cb9bc4f2ef4cc577912b3d11b2ad29504" platformio.ini
+          grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/elecrow_panel/platformio.ini
+          grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/picomputer-s3/platformio.ini
+          grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/rak_wismesh_tap_v2/platformio.ini
+          grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/seeed-sensecap-indicator/platformio.ini
           grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/t-deck/platformio.ini
+          grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/unphone/platformio.ini
 
-      - name: Build target
+      - name: Build targets
         working-directory: firmware
-        run: pio run -e "$TARGET"
+        run: |
+          set -euo pipefail
+          for target in $TARGETS; do
+            echo "::group::Build $target"
+            pio run -e "$target"
+            echo "::endgroup::"
+          done
 
       - name: Collect firmware assets
         run: |
@@ -51,9 +70,11 @@ jobs:
           build_timestamp="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
           out="release/$RELEASE_TAG"
           mkdir -p "$out"
-          cp "firmware/.pio/build/$TARGET"/firmware-*.bin "$out/"
-          cp "firmware/.pio/build/$TARGET"/littlefs-*.bin "$out/" || true
-          cp "firmware/.pio/build/$TARGET"/*.mt.json "$out/" || true
+          for target in $TARGETS; do
+            cp "firmware/.pio/build/$target"/firmware-*.bin "$out/"
+            cp "firmware/.pio/build/$target"/littlefs-*.bin "$out/" || true
+            cp "firmware/.pio/build/$target"/*.mt.json "$out/" || true
+          done
           sha256sum "$out"/* > "$out/SHA256SUMS.txt"
           {
             echo "release_tag=$RELEASE_TAG"
@@ -61,7 +82,7 @@ jobs:
             echo "firmware_ref=$FIRMWARE_REF"
             echo "device_ui_repo=$DEVICE_UI_REPO"
             echo "device_ui_ref=$DEVICE_UI_REF"
-            echo "target=$TARGET"
+            echo "targets=$TARGETS"
             echo "compile_definition=DEVICE_UI_MUI_VIRTUAL_NODE_LIST"
             echo "build_timestamp=$build_timestamp"
           } > "$out/build-source.txt"
@@ -86,12 +107,12 @@ jobs:
             echo
             echo "- Firmware: $FIRMWARE_REPO@$FIRMWARE_REF"
             echo "- Device UI: $DEVICE_UI_REPO@$DEVICE_UI_REF"
-            echo "- Target: $TARGET"
+            echo "- Targets: $TARGETS"
             echo "- Required compile definition: DEVICE_UI_MUI_VIRTUAL_NODE_LIST"
           } > "$notes"
           gh release delete "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag || true
           gh release create "$RELEASE_TAG" \
             --repo "$GITHUB_REPOSITORY" \
-            --title "MUI virtual node-list tester firmware ($TARGET)" \
+            --title "MUI virtual node-list tester firmware (all MUI targets)" \
             --notes-file "$notes" \
             "release/$RELEASE_TAG"/*
