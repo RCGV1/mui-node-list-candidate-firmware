@@ -8,14 +8,15 @@ permissions:
 
 env:
   FIRMWARE_REPO: RCGV1/firmware-Fork
-  FIRMWARE_REF: 631688ede1322c5008af73f7b08bc41906c4d20d
+  FIRMWARE_REF: 0d652f66d5a58e23f7fd1505e23c03a4a6ada302
   DEVICE_UI_REPO: RCGV1/device-ui
   DEVICE_UI_REF: 9e84d74cb9bc4f2ef4cc577912b3d11b2ad29504
-  RELEASE_TAG: mui-node-list-20260824-631688e
+  RELEASE_TAG: mui-node-list-20260824-0d652f6
   TARGETS: >-
     elecrow-adv-24-28-tft
     elecrow-adv-35-tft
     elecrow-adv1-43-50-70-tft
+    heltec-v4-tft
     picomputer-s3-tft
     rak_wismesh_tap_v2-tft
     seeed-sensecap-indicator-tft
@@ -33,6 +34,7 @@ jobs:
           - elecrow-adv-24-28-tft
           - elecrow-adv-35-tft
           - elecrow-adv1-43-50-70-tft
+          - heltec-v4-tft
           - picomputer-s3-tft
           - rak_wismesh_tap_v2-tft
           - seeed-sensecap-indicator-tft
@@ -61,6 +63,7 @@ jobs:
           set -euo pipefail
           grep -F "9e84d74cb9bc4f2ef4cc577912b3d11b2ad29504" platformio.ini
           grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/elecrow_panel/platformio.ini
+          grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/heltec_v4/platformio.ini
           grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/picomputer-s3/platformio.ini
           grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/rak_wismesh_tap_v2/platformio.ini
           grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/seeed-sensecap-indicator/platformio.ini
