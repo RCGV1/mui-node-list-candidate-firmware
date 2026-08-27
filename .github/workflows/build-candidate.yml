@@ -61,7 +61,7 @@ jobs:
         working-directory: firmware
         run: |
           set -euo pipefail
-          sed -i "s#https://github.com/meshtastic/device-ui/archive/[0-9a-f]*\.zip#https://github.com/$DEVICE_UI_REPO/archive/$DEVICE_UI_REF.zip#" platformio.ini
+          sed -i "s#https://github.com/[^/]*/device-ui/archive/[0-9a-f]*\.zip#https://github.com/$DEVICE_UI_REPO/archive/$DEVICE_UI_REF.zip#" platformio.ini
           grep -F "https://github.com/$DEVICE_UI_REPO/archive/$DEVICE_UI_REF.zip" platformio.ini
           grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/elecrow_panel/platformio.ini
           grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/heltec_v4/platformio.ini
