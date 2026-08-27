@@ -10,8 +10,8 @@ env:
   FIRMWARE_REPO: RCGV1/firmware-Fork
   FIRMWARE_REF: 6da76d5b60534328928267861273bf6d0b92579e
   DEVICE_UI_REPO: RCGV1/device-ui
-  DEVICE_UI_REF: 9e84d74cb9bc4f2ef4cc577912b3d11b2ad29504
-  RELEASE_TAG: mui-node-list-20260825-6da76d5
+  DEVICE_UI_REF: c96113e71e10698c291ebb7c307d68cb1d2d0f7a
+  RELEASE_TAG: mui-node-list-20260827-c96113e
   TARGETS: >-
     elecrow-adv-24-28-tft
     elecrow-adv-35-tft
@@ -57,11 +57,12 @@ jobs:
       - name: Install PlatformIO
         run: python -m pip install --upgrade platformio
 
-      - name: Verify source provenance
+      - name: Pin and verify source provenance
         working-directory: firmware
         run: |
           set -euo pipefail
-          grep -F "9e84d74cb9bc4f2ef4cc577912b3d11b2ad29504" platformio.ini
+          sed -i "s#https://github.com/meshtastic/device-ui/archive/[0-9a-f]*\.zip#https://github.com/$DEVICE_UI_REPO/archive/$DEVICE_UI_REF.zip#" platformio.ini
+          grep -F "https://github.com/$DEVICE_UI_REPO/archive/$DEVICE_UI_REF.zip" platformio.ini
           grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/elecrow_panel/platformio.ini
           grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/heltec_v4/platformio.ini
           grep -F "DEVICE_UI_MUI_VIRTUAL_NODE_LIST" variants/esp32s3/picomputer-s3/platformio.ini
