@@ -8,10 +8,10 @@ permissions:
 
 env:
   FIRMWARE_REPO: RCGV1/firmware-Fork
-  FIRMWARE_REF: 0d652f66d5a58e23f7fd1505e23c03a4a6ada302
+  FIRMWARE_REF: 6da76d5b60534328928267861273bf6d0b92579e
   DEVICE_UI_REPO: RCGV1/device-ui
   DEVICE_UI_REF: 9e84d74cb9bc4f2ef4cc577912b3d11b2ad29504
-  RELEASE_TAG: mui-node-list-20260824-0d652f6
+  RELEASE_TAG: mui-node-list-20260825-6da76d5
   TARGETS: >-
     elecrow-adv-24-28-tft
     elecrow-adv-35-tft
